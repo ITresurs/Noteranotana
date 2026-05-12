@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Observationsprotokoll – Fältbesök</title>
+<style>
+  :root {
+    --bg: #f5f3ee;
+    --surface: #ffffff;
+    --ink: #1a1a1a;
+    --ink-soft: #5a5a5a;
+    --line: #d8d4ca;
+    --line-soft: #ebe7dd;
+    --accent: #1f4e79;
+    --accent-soft: #e8eef5;
+    --warn: #b8410f;
+    --ok: #2d6a4f;
+    --shade: #faf8f3;
+    --radius: 6px;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    font-size: 16px; line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 20px 16px 140px; }
+
+  header.app { border-bottom: 2px solid var(--ink); padding-bottom: 16px; margin-bottom: 24px; }
+  header.app h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.01em; }
+  header.app .sub { color: var(--ink-soft); font-size: 14px; margin-top: 4px; }
+
+  section.block {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px; margin-bottom: 16px;
+  }
+  section.block > h2 {
+    margin: 0 0 14px;
+    font-size: 15px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--accent); font-weight: 700;
+    padding-bottom: 8px; border-bottom: 1px solid var(--line-soft);
+  }
+  section.block > h2 .num {
+    display: inline-block; width: 22px; height: 22px; line-height: 22px;
+    text-align: center; background: var(--accent); color: #fff;
+    border-radius: 50%; font-size: 12px; margin-right: 8px; vertical-align: 1px;
+  }
+
+  .moment {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    margin-bottom: 16px; overflow: hidden;
+  }
+  .moment header {
+    background: var(--accent); color: #fff;
+    padding: 12px 16px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .moment header h3 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: 0.02em; }
+  .moment .body { padding: 16px; }
+  .moment .body > .field {
+    padding-bottom: 14px; margin-bottom: 14px;
+    border-bottom: 1px dashed var(--line-soft);
+  }
+  .moment .body > .field:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+  label.field-label {
+    display: block; font-size: 13px; font-weight: 600;
+    color: var(--ink); margin-bottom: 8px;
+  }
+  label.field-label .hint { font-weight: 400; color: var(--ink-soft); font-size: 12px; margin-left: 6px; }
+
+  input[type="text"], input[type="date"], input[type="time"], textarea {
+    width: 100%;
+    border: 1px solid var(--line); border-radius: 4px;
+    padding: 10px 12px; font-size: 16px;
+    font-family: inherit; background: #fff; color: var(--ink);
+    transition: border-color 0.15s;
+  }
+  input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, textarea:focus {
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  textarea { min-height: 70px; resize: vertical; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  @media (max-width: 600px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  .pill-group { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill {
+    display: inline-flex; align-items: center;
+    padding: 8px 12px;
+    background: #fff; border: 1px solid var(--line);
+    border-radius: 20px; font-size: 14px;
+    cursor: pointer; user-select: none;
+    transition: all 0.12s; min-height: 38px;
+  }
+  .pill:hover { border-color: var(--accent); }
+  .pill input { margin: 0 6px 0 0; cursor: pointer; }
+  .pill input:checked + span { font-weight: 600; }
+  .pill:has(input:checked) {
+    background: var(--accent-soft); border-color: var(--accent); color: var(--accent);
+  }
+  .pill.warn:has(input:checked) {
+    background: #fde7dc; border-color: var(--warn); color: var(--warn);
+  }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 16px; border-radius: 4px;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer; border: 1px solid var(--ink);
+    background: #fff; color: var(--ink);
+    font-family: inherit; transition: all 0.12s;
+  }
+  .btn:hover { background: var(--ink); color: #fff; }
+  .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn-primary:hover { background: #163a5c; border-color: #163a5c; }
+  .btn-ghost {
+    border-color: transparent; background: transparent;
+    color: rgba(255,255,255,0.85);
+    padding: 4px 8px; font-size: 13px;
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.15); color: #fff; }
+  .btn svg { width: 16px; height: 16px; }
+
+  .add-moment-row { text-align: center; margin: 8px 0 24px; }
+  .add-moment-btn {
+    padding: 14px 22px; font-size: 15px;
+    background: #fff; border: 2px dashed var(--accent); color: var(--accent);
+  }
+  .add-moment-btn:hover {
+    background: var(--accent-soft); color: var(--accent);
+    border-color: var(--accent); border-style: dashed;
+  }
+
+  .actionbar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--ink); color: #fff;
+    padding: 12px 16px;
+    display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.15); z-index: 50;
+  }
+  .actionbar .btn { background: transparent; color: #fff; border-color: rgba(255,255,255,0.3); }
+  .actionbar .btn:hover { background: #fff; color: var(--ink); }
+  .actionbar .btn-primary { background: #fff; color: var(--ink); border-color: #fff; }
+  .actionbar .btn-primary:hover { background: var(--accent-soft); color: var(--accent); }
+
+  .toast {
+    position: fixed; bottom: 80px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink); color: #fff;
+    padding: 12px 18px; border-radius: 6px;
+    font-size: 14px; opacity: 0; pointer-events: none;
+    transition: all 0.25s; z-index: 100;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.ok { background: var(--ok); }
+  .toast.warn { background: var(--warn); }
+
+  .help {
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    padding: 12px 14px; border-radius: 4px;
+    font-size: 13px; color: var(--ink-soft);
+    margin-bottom: 16px;
+  }
+  .help strong { color: var(--accent); }
+
+  @media print {
+    .actionbar, .add-moment-row, .moment header .btn-ghost { display: none !important; }
+    body { background: #fff; }
+    section.block, .moment { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<header class="app">
+  <h1>Observationsprotokoll – fältbesök</h1>
+  <div class="sub">Fyll i på plats. Spara utkast lokalt eller exportera till CSV när du är klar.</div>
+</header>
+
+<div class="help">
+  <strong>Tala in svar:</strong> Tryck i ett textfält så tangentbordet kommer upp, och använd sedan mikrofonsymbolen i tangentbordet (Gboard / Samsung Keyboard / iOS-tangentbordet). Allt sparas automatiskt i webbläsaren tills du rensar.
+</div>
+
+<section class="block">
+  <h2><span class="num">1</span>Grunduppgifter</h2>
+  <div class="grid-2">
+    <div><label class="field-label">Datum</label><input type="date" data-key="datum"></div>
+    <div><label class="field-label">Tid</label><input type="time" data-key="tid"></div>
+    <div><label class="field-label">Observatör</label><input type="text" data-key="observator" placeholder="Ditt namn"></div>
+    <div><label class="field-label">Observerad – yrkesroll</label><input type="text" data-key="yrkesroll" placeholder="t.ex. undersköterska"></div>
+    <div><label class="field-label">Prototyp / version <span class="hint">t.ex. HSL-delen v1.3</span></label><input type="text" data-key="version"></div>
+    <div><label class="field-label">Plats / enhet</label><input type="text" data-key="plats"></div>
+  </div>
+
+  <div class="field" style="margin-top:16px;">
+    <label class="field-label">Verksamhet</label>
+    <div class="pill-group">
+      <label class="pill"><input type="radio" name="verksamhet" value="Hemtjänst"><span>Hemtjänst</span></label>
+      <label class="pill"><input type="radio" name="verksamhet" value="SÄBO"><span>SÄBO</span></label>
+      <label class="pill"><input type="radio" name="verksamhet" value="LSS"><span>LSS</span></label>
+      <label class="pill"><input type="radio" name="verksamhet" value="HSL"><span>HSL</span></label>
+      <label class="pill"><input type="radio" name="verksamhet" value="Annat"><span>Annat</span></label>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top:14px;">
+    <div>
+      <label class="field-label">Arbetspass</label>
+      <div class="pill-group">
+        <label class="pill"><input type="radio" name="pass" value="Dag"><span>Dag</span></label>
+        <label class="pill"><input type="radio" name="pass" value="Kväll"><span>Kväll</span></label>
+        <label class="pill"><input type="radio" name="pass" value="Natt"><span>Natt</span></label>
+      </div>
+    </div>
+    <div>
+      <label class="field-label">Scenario</label>
+      <div class="pill-group">
+        <label class="pill"><input type="radio" name="scenario" value="Skarpt"><span>Skarpt arbete</span></label>
+        <label class="pill"><input type="radio" name="scenario" value="Test"><span>Test</span></label>
+        <label class="pill"><input type="radio" name="scenario" value="Utbildning"><span>Utbildning</span></label>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block">
+  <h2><span class="num">2</span>Fokus och förutsättningar</h2>
+  <label class="field-label">Vad fokuserar observationen på? <span class="hint">flera val möjliga</span></label>
+  <div class="pill-group">
+    <label class="pill"><input type="checkbox" name="fokus" value="Dokumentation"><span>Dokumentation</span></label>
+    <label class="pill"><input type="checkbox" name="fokus" value="Läkemedelshantering"><span>Läkemedelshantering</span></label>
+    <label class="pill"><input type="checkbox" name="fokus" value="Informationssökning"><span>Informationssökning</span></label>
+    <label class="pill"><input type="checkbox" name="fokus" value="Anteckningar"><span>Anteckningar</span></label>
+    <label class="pill"><input type="checkbox" name="fokus" value="Mobil"><span>Mobil användning</span></label>
+    <label class="pill"><input type="checkbox" name="fokus" value="Stationär"><span>Stationär</span></label>
+    <label class="pill"><input type="checkbox" name="fokus" value="Överrapportering"><span>Överrapportering</span></label>
+    <label class="pill"><input type="checkbox" name="fokus" value="Annat"><span>Annat</span></label>
+  </div>
+
+  <div class="grid-2" style="margin-top:14px;">
+    <div>
+      <label class="field-label">Arbetsbelastning</label>
+      <div class="pill-group">
+        <label class="pill"><input type="radio" name="belastning" value="Låg"><span>Låg</span></label>
+        <label class="pill"><input type="radio" name="belastning" value="Normal"><span>Normal</span></label>
+        <label class="pill"><input type="radio" name="belastning" value="Hög"><span>Hög</span></label>
+      </div>
+    </div>
+    <div>
+      <label class="field-label">Störningar</label>
+      <div class="pill-group">
+        <label class="pill"><input type="checkbox" name="storning" value="Inga"><span>Inga</span></label>
+        <label class="pill"><input type="checkbox" name="storning" value="Tekniska"><span>Tekniska</span></label>
+        <label class="pill"><input type="checkbox" name="storning" value="Omgivning"><span>Omgivning</span></label>
+        <label class="pill"><input type="checkbox" name="storning" value="Avbrott"><span>Avbrott</span></label>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:14px;">
+    <label class="field-label">Beskriv ev. störning</label>
+    <textarea data-key="storning_beskrivning" placeholder="Frivilligt"></textarea>
+  </div>
+</section>
+
+<section class="block">
+  <h2><span class="num">3</span>Arbetsmoment som observerats</h2>
+  <div id="momentList"></div>
+</section>
+
+<div class="add-moment-row">
+  <button class="btn add-moment-btn" id="addMoment">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Lägg till arbetsmoment
+  </button>
+</div>
+
+<section class="block">
+  <h2><span class="num">4</span>Helhetsintryck</h2>
+  <div class="grid-2">
+    <div>
+      <label class="field-label">Kognitiv belastning</label>
+      <div class="pill-group">
+        <label class="pill"><input type="checkbox" name="kog" value="Mycket att komma ihåg"><span>Mycket att komma ihåg</span></label>
+        <label class="pill"><input type="checkbox" name="kog" value="Skriver påminnelser"><span>Skriver påminnelser</span></label>
+        <label class="pill"><input type="checkbox" name="kog" value="Risk att missa dokumentation"><span>Risk att missa dokumentation</span></label>
+        <label class="pill"><input type="checkbox" name="kog" value="Risk att missa rapportering"><span>Risk att missa rapportering</span></label>
+      </div>
+    </div>
+    <div>
+      <label class="field-label">Omständliga / ologiska moment</label>
+      <div class="pill-group">
+        <label class="pill"><input type="checkbox" name="omst" value="Många steg"><span>Onödigt många steg</span></label>
+        <label class="pill"><input type="checkbox" name="omst" value="Ologisk ordning"><span>Ologisk ordning</span></label>
+        <label class="pill"><input type="checkbox" name="omst" value="Oflexibelt"><span>Tvingar oflexibelt arbetssätt</span></label>
+        <label class="pill"><input type="checkbox" name="omst" value="Tar mycket tid"><span>Tar mycket tid</span></label>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:14px;">
+    <label class="field-label">Attityd i arbetsgruppen</label>
+    <div class="pill-group">
+      <label class="pill"><input type="radio" name="attityd" value="Positiv"><span>Positiv / nyfiken</span></label>
+      <label class="pill"><input type="radio" name="attityd" value="Avvaktande"><span>Avvaktande</span></label>
+      <label class="pill"><input type="radio" name="attityd" value="Skeptisk"><span>Skeptisk</span></label>
+      <label class="pill"><input type="radio" name="attityd" value="Negativ"><span>Negativ</span></label>
+      <label class="pill"><input type="radio" name="attityd" value="Blandad"><span>Blandad</span></label>
+    </div>
+  </div>
+
+  <div style="margin-top:14px;">
+    <label class="field-label">Mognad för nya arbetssätt (ex. Notana)</label>
+    <div class="pill-group">
+      <label class="pill"><input type="radio" name="mognad" value="Redo idag"><span>Redo idag</span></label>
+      <label class="pill"><input type="radio" name="mognad" value="Behöver utbildning"><span>Behöver utbildning</span></label>
+      <label class="pill"><input type="radio" name="mognad" value="Behöver stöd över tid"><span>Behöver stöd över tid</span></label>
+      <label class="pill"><input type="radio" name="mognad" value="Stort motstånd"><span>Stort motstånd</span></label>
+    </div>
+  </div>
+</section>
+
+<section class="block">
+  <h2><span class="num">5</span>Sammanfattande bedömning</h2>
+  <div class="field">
+    <label class="field-label">Vad fungerade bra?</label>
+    <textarea data-key="bra"></textarea>
+  </div>
+  <div class="field">
+    <label class="field-label">Vad fungerade dåligt?</label>
+    <textarea data-key="daligt"></textarea>
+  </div>
+  <div class="field">
+    <label class="field-label">Förslag från personalen <span class="hint">egna lösningar, idéer</span></label>
+    <textarea data-key="forslag"></textarea>
+  </div>
+  <div class="field">
+    <label class="field-label">Tre viktigaste förbättringsområdena</label>
+    <textarea data-key="forbattring"></textarea>
+  </div>
+</section>
+
+<section class="block">
+  <h2><span class="num">6</span>Uppföljning</h2>
+  <div class="pill-group">
+    <label class="pill"><input type="checkbox" name="uppf" value="Testa igen samma version"><span>Testa igen med samma version</span></label>
+    <label class="pill"><input type="checkbox" name="uppf" value="Lyfts till leverantör"><span>Lyfts till leverantör</span></label>
+    <label class="pill"><input type="checkbox" name="uppf" value="Arbetssätt justeras"><span>Arbetssätt justeras</span></label>
+    <label class="pill"><input type="checkbox" name="uppf" value="Behov av utbildning"><span>Behov av utbildning</span></label>
+  </div>
+  <div style="margin-top:14px;">
+    <label class="field-label">Ansvarig för uppföljning</label>
+    <input type="text" data-key="ansvarig">
+  </div>
+</section>
+
+</div>
+
+<div class="actionbar">
+  <button class="btn" id="btnNew" title="Rensar formuläret">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    Ny
+  </button>
+  <button class="btn" id="btnSave">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+    Spara utkast
+  </button>
+  <button class="btn" id="btnPrint">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+    Skriv ut / PDF
+  </button>
+  <button class="btn btn-primary" id="btnExport">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Exportera CSV
+  </button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'voo_obs_protokoll_v1';
+let momentCounter = 0;
+
+function $(sel, root) { return (root || document).querySelector(sel); }
+function $$(sel, root) { return Array.from((root || document).querySelectorAll(sel)); }
+
+function toast(msg, type) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (type || '');
+  setTimeout(() => t.className = 'toast', 2500);
+}
+
+function buildMoment(num) {
+  const id = 'm' + num;
+  const div = document.createElement('div');
+  div.className = 'moment';
+  div.dataset.momentId = id;
+  div.innerHTML = `
+    <header>
+      <h3>Arbetsmoment ${num}</h3>
+      <button class="btn btn-ghost" type="button" data-action="remove-moment" title="Ta bort">✕ Ta bort</button>
+    </header>
+    <div class="body">
+      <div class="field">
+        <label class="field-label">Vad försöker användaren göra?</label>
+        <textarea data-mkey="vad"></textarea>
+      </div>
+      <div class="field">
+        <label class="field-label">Fungerar det som tänkt?</label>
+        <div class="pill-group">
+          <label class="pill"><input type="radio" name="${id}_funk" value="Ja"><span>Ja</span></label>
+          <label class="pill"><input type="radio" name="${id}_funk" value="Delvis"><span>Delvis</span></label>
+          <label class="pill"><input type="radio" name="${id}_funk" value="Nej"><span>Nej</span></label>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Tidsåtgång (uppskattad)</label>
+        <div class="pill-group">
+          <label class="pill"><input type="radio" name="${id}_tid" value="<1 min"><span>&lt;1 min</span></label>
+          <label class="pill"><input type="radio" name="${id}_tid" value="1-3 min"><span>1–3 min</span></label>
+          <label class="pill"><input type="radio" name="${id}_tid" value="3-10 min"><span>3–10 min</span></label>
+          <label class="pill"><input type="radio" name="${id}_tid" value=">10 min"><span>&gt;10 min</span></label>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Avvikelse från önskat arbetssätt</label>
+        <div class="pill-group">
+          <label class="pill"><input type="checkbox" name="${id}_avv" value="Hoppar över steg"><span>Hoppar över steg</span></label>
+          <label class="pill"><input type="checkbox" name="${id}_avv" value="Egen lösning"><span>Egen lösning</span></label>
+          <label class="pill"><input type="checkbox" name="${id}_avv" value="Frågar kollega"><span>Frågar kollega</span></label>
+          <label class="pill"><input type="checkbox" name="${id}_avv" value="Antecknar på papper"><span>Antecknar på papper</span></label>
+          <label class="pill"><input type="checkbox" name="${id}_avv" value="Inget avvikande"><span>Inget avvikande</span></label>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Användbarhet</label>
+        <div class="grid-2">
+          <div>
+            <div style="font-size:12px;color:var(--ink-soft);margin-bottom:4px;">Navigation</div>
+            <div class="pill-group">
+              <label class="pill"><input type="radio" name="${id}_nav" value="Lätt"><span>Lätt</span></label>
+              <label class="pill"><input type="radio" name="${id}_nav" value="Delvis"><span>Delvis</span></label>
+              <label class="pill"><input type="radio" name="${id}_nav" value="Svår"><span>Svår</span></label>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--ink-soft);margin-bottom:4px;">Begrepp/språk stämmer</div>
+            <div class="pill-group">
+              <label class="pill"><input type="radio" name="${id}_sprak" value="Ja"><span>Ja</span></label>
+              <label class="pill"><input type="radio" name="${id}_sprak" value="Delvis"><span>Delvis</span></label>
+              <label class="pill"><input type="radio" name="${id}_sprak" value="Nej"><span>Nej</span></label>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--ink-soft);margin-bottom:4px;">Klickvägar</div>
+            <div class="pill-group">
+              <label class="pill"><input type="radio" name="${id}_klick" value="Få"><span>Få</span></label>
+              <label class="pill"><input type="radio" name="${id}_klick" value="Lagom"><span>Lagom</span></label>
+              <label class="pill"><input type="radio" name="${id}_klick" value="Många"><span>Många</span></label>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--ink-soft);margin-bottom:4px;">Risk för felklick / missad info</div>
+            <div class="pill-group">
+              <label class="pill"><input type="radio" name="${id}_risk" value="Låg"><span>Låg</span></label>
+              <label class="pill"><input type="radio" name="${id}_risk" value="Medel"><span>Medel</span></label>
+              <label class="pill warn"><input type="radio" name="${id}_risk" value="Hög"><span>Hög</span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Reaktioner och beteenden</label>
+        <div class="pill-group">
+          <label class="pill"><input type="checkbox" name="${id}_reak" value="Tillfredställelse"><span>Tillfredställelse</span></label>
+          <label class="pill"><input type="checkbox" name="${id}_reak" value="Tvekan"><span>Tvekan</span></label>
+          <label class="pill"><input type="checkbox" name="${id}_reak" value="Osäkerhet"><span>Osäkerhet</span></label>
+          <label class="pill"><input type="checkbox" name="${id}_reak" value="Frustration"><span>Frustration</span></label>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Patientsäkerhet / risk</label>
+        <div class="pill-group">
+          <label class="pill warn"><input type="checkbox" name="${id}_pat" value="Felregistrering"><span>Risk för felregistrering</span></label>
+          <label class="pill warn"><input type="checkbox" name="${id}_pat" value="Info missas"><span>Risk att info missas</span></label>
+          <label class="pill warn"><input type="checkbox" name="${id}_pat" value="Dubbelregistrering"><span>Risk för dubbelregistrering</span></label>
+          <label class="pill warn"><input type="checkbox" name="${id}_pat" value="Användaren gissar"><span>Användaren gissar</span></label>
+        </div>
+        <div style="margin-top:8px;">
+          <div style="font-size:12px;color:var(--ink-soft);margin-bottom:4px;">Nödvändiga varningar / spärrar</div>
+          <div class="pill-group">
+            <label class="pill"><input type="radio" name="${id}_varn" value="Finns"><span>Finns</span></label>
+            <label class="pill"><input type="radio" name="${id}_varn" value="Saknas delvis"><span>Saknas delvis</span></label>
+            <label class="pill warn"><input type="radio" name="${id}_varn" value="Saknas helt"><span>Saknas helt</span></label>
+            <label class="pill"><input type="radio" name="${id}_varn" value="Ej relevant"><span>Ej relevant</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Kommentar / citat från personalen</label>
+        <textarea data-mkey="kommentar"></textarea>
+      </div>
+    </div>
+  `;
+  return div;
+}
+
+function addMoment() {
+  momentCounter++;
+  const div = buildMoment(momentCounter);
+  $('#momentList').appendChild(div);
+  div.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function renumberMoments() {
+  $$('#momentList .moment').forEach((m, idx) => {
+    m.querySelector('h3').textContent = 'Arbetsmoment ' + (idx + 1);
+  });
+}
+
+document.addEventListener('click', (e) => {
+  if (e.target.closest('[data-action="remove-moment"]')) {
+    const moment = e.target.closest('.moment');
+    if (confirm('Ta bort detta arbetsmoment?')) {
+      moment.remove();
+      renumberMoments();
+      saveDraftSilent();
+    }
+  }
+});
+
+$('#addMoment').addEventListener('click', addMoment);
+
+
+/* DATA COLLECTION */
+function collectData() {
+  const get = (key) => {
+    const el = document.querySelector('[data-key="' + key + '"]');
+    return el ? el.value : '';
+  };
+  const radio = (name) => {
+    const el = document.querySelector('input[name="' + name + '"]:checked');
+    return el ? el.value : '';
+  };
+  const checks = (name) => {
+    return $$('input[name="' + name + '"]:checked').map(e => e.value).join('; ');
+  };
+
+  const moments = $$('#momentList .moment').map((m, idx) => {
+    const mid = m.dataset.momentId;
+    const mGet = (key) => {
+      const el = m.querySelector('[data-mkey="' + key + '"]');
+      return el ? el.value : '';
+    };
+    const mRadio = (name) => {
+      const el = m.querySelector('input[name="' + name + '"]:checked');
+      return el ? el.value : '';
+    };
+    const mChecks = (name) => {
+      return $$('input[name="' + name + '"]:checked', m).map(e => e.value).join('; ');
+    };
+    return {
+      nr: idx + 1,
+      vad: mGet('vad'),
+      fungerar: mRadio(mid + '_funk'),
+      tidsatgang: mRadio(mid + '_tid'),
+      avvikelse: mChecks(mid + '_avv'),
+      navigation: mRadio(mid + '_nav'),
+      sprak: mRadio(mid + '_sprak'),
+      klickvagar: mRadio(mid + '_klick'),
+      risk_felklick: mRadio(mid + '_risk'),
+      reaktioner: mChecks(mid + '_reak'),
+      patientsakerhet: mChecks(mid + '_pat'),
+      varningar: mRadio(mid + '_varn'),
+      kommentar: mGet('kommentar'),
+    };
+  });
+
+  return {
+    grund: {
+      datum: get('datum'), tid: get('tid'),
+      observator: get('observator'), yrkesroll: get('yrkesroll'),
+      version: get('version'), plats: get('plats'),
+      verksamhet: radio('verksamhet'), pass: radio('pass'), scenario: radio('scenario'),
+    },
+    fokus: {
+      fokus: checks('fokus'), belastning: radio('belastning'),
+      storning: checks('storning'), storning_beskrivning: get('storning_beskrivning'),
+    },
+    moments,
+    helhet: {
+      kog: checks('kog'), omst: checks('omst'),
+      attityd: radio('attityd'), mognad: radio('mognad'),
+    },
+    sammanfattning: {
+      bra: get('bra'), daligt: get('daligt'),
+      forslag: get('forslag'), forbattring: get('forbattring'),
+    },
+    uppfoljning: { uppf: checks('uppf'), ansvarig: get('ansvarig') }
+  };
+}
+
+function applyData(data) {
+  if (!data) return;
+  const set = (key, val) => {
+    const el = document.querySelector('[data-key="' + key + '"]');
+    if (el && val != null) el.value = val;
+  };
+  const setRadio = (name, val) => {
+    if (!val) return;
+    const el = document.querySelector('input[name="' + name + '"][value="' + val + '"]');
+    if (el) el.checked = true;
+  };
+  const setChecks = (name, valStr) => {
+    if (!valStr) return;
+    valStr.split('; ').forEach(v => {
+      const el = document.querySelector('input[name="' + name + '"][value="' + v + '"]');
+      if (el) el.checked = true;
+    });
+  };
+
+  if (data.grund) {
+    Object.entries(data.grund).forEach(([k, v]) => {
+      if (['verksamhet', 'pass', 'scenario'].includes(k)) setRadio(k, v);
+      else set(k, v);
+    });
+  }
+  if (data.fokus) {
+    setChecks('fokus', data.fokus.fokus);
+    setRadio('belastning', data.fokus.belastning);
+    setChecks('storning', data.fokus.storning);
+    set('storning_beskrivning', data.fokus.storning_beskrivning);
+  }
+  if (data.moments && data.moments.length) {
+    $('#momentList').innerHTML = '';
+    momentCounter = 0;
+    data.moments.forEach(m => {
+      addMoment();
+      const mEl = $('#momentList .moment:last-child');
+      const mid = mEl.dataset.momentId;
+      const setM = (key, val) => {
+        const el = mEl.querySelector('[data-mkey="' + key + '"]');
+        if (el && val != null) el.value = val;
+      };
+      setM('vad', m.vad);
+      setM('kommentar', m.kommentar);
+      setRadio(mid + '_funk', m.fungerar);
+      setRadio(mid + '_tid', m.tidsatgang);
+      setChecks(mid + '_avv', m.avvikelse);
+      setRadio(mid + '_nav', m.navigation);
+      setRadio(mid + '_sprak', m.sprak);
+      setRadio(mid + '_klick', m.klickvagar);
+      setRadio(mid + '_risk', m.risk_felklick);
+      setChecks(mid + '_reak', m.reaktioner);
+      setChecks(mid + '_pat', m.patientsakerhet);
+      setRadio(mid + '_varn', m.varningar);
+    });
+  }
+  if (data.helhet) {
+    setChecks('kog', data.helhet.kog);
+    setChecks('omst', data.helhet.omst);
+    setRadio('attityd', data.helhet.attityd);
+    setRadio('mognad', data.helhet.mognad);
+  }
+  if (data.sammanfattning) {
+    Object.entries(data.sammanfattning).forEach(([k, v]) => set(k, v));
+  }
+  if (data.uppfoljning) {
+    setChecks('uppf', data.uppfoljning.uppf);
+    set('ansvarig', data.uppfoljning.ansvarig);
+  }
+}
+
+function saveDraftSilent() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(collectData()));
+  } catch (e) {}
+}
+function loadDraft() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) applyData(JSON.parse(raw));
+  } catch (e) {}
+}
+document.addEventListener('input', saveDraftSilent);
+document.addEventListener('change', saveDraftSilent);
+
+$('#btnSave').addEventListener('click', () => {
+  saveDraftSilent();
+  toast('Utkast sparat lokalt', 'ok');
+});
+
+$('#btnNew').addEventListener('click', () => {
+  if (!confirm('Rensa formuläret? Spara ev. CSV först.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  location.reload();
+});
+
+$('#btnPrint').addEventListener('click', () => window.print());
+
+function csvEscape(v) {
+  if (v == null) return '';
+  const s = String(v);
+  if (s.includes('"') || s.includes(';') || s.includes('\n') || s.includes(',')) {
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+
+function exportCSV() {
+  const data = collectData();
+  const g = data.grund, f = data.fokus, h = data.helhet, s = data.sammanfattning, u = data.uppfoljning;
+
+  const headers = [
+    'datum','tid','observator','yrkesroll','version','plats',
+    'verksamhet','arbetspass','scenario',
+    'fokus','arbetsbelastning','storningar','storning_beskrivning',
+    'moment_nr','moment_vad','moment_fungerar','moment_tidsatgang',
+    'moment_avvikelse','moment_navigation','moment_sprak','moment_klickvagar',
+    'moment_risk_felklick','moment_reaktioner','moment_patientsakerhet',
+    'moment_varningar','moment_kommentar',
+    'helhet_kognitiv_belastning','helhet_omstandliga','helhet_attityd','helhet_mognad',
+    'samm_bra','samm_daligt','samm_forslag','samm_forbattring',
+    'uppfoljning','uppfoljning_ansvarig'
+  ];
+
+  const baseRow = [
+    g.datum, g.tid, g.observator, g.yrkesroll, g.version, g.plats,
+    g.verksamhet, g.pass, g.scenario,
+    f.fokus, f.belastning, f.storning, f.storning_beskrivning,
+  ];
+  const tailRow = [
+    h.kog, h.omst, h.attityd, h.mognad,
+    s.bra, s.daligt, s.forslag, s.forbattring,
+    u.uppf, u.ansvarig,
+  ];
+
+  const rows = [headers];
+  if (data.moments.length === 0) {
+    rows.push(baseRow.concat(['', '', '', '', '', '', '', '', '', '', '', '', ''], tailRow));
+  } else {
+    data.moments.forEach(m => {
+      rows.push(baseRow.concat([
+        m.nr, m.vad, m.fungerar, m.tidsatgang,
+        m.avvikelse, m.navigation, m.sprak, m.klickvagar,
+        m.risk_felklick, m.reaktioner, m.patientsakerhet,
+        m.varningar, m.kommentar
+      ], tailRow));
+    });
+  }
+
+  const csv = '\uFEFF' + rows.map(r => r.map(csvEscape).join(';')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+
+  const today = g.datum || new Date().toISOString().slice(0, 10);
+  const obs = (g.observator || 'observation').replace(/[^a-zA-ZåäöÅÄÖ0-9_-]/g, '_');
+  const filename = 'observation_' + today + '_' + obs + '.csv';
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  toast('CSV exporterad', 'ok');
+}
+
+$('#btnExport').addEventListener('click', exportCSV);
+
+/* INIT */
+loadDraft();
+if ($$('#momentList .moment').length === 0) {
+  addMoment();
+}
+
+const datumEl = document.querySelector('[data-key="datum"]');
+if (datumEl && !datumEl.value) {
+  datumEl.value = new Date().toISOString().slice(0, 10);
+}
+const tidEl = document.querySelector('[data-key="tid"]');
+if (tidEl && !tidEl.value) {
+  const now = new Date();
+  tidEl.value = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+}
+</script>
+
+</body>
+</html>
